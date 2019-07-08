@@ -11,10 +11,7 @@ $ yarn add nodejs-meme-generator
 ```
 
 ## Requirements
-Unless previously installed you'll need Cairo and Pango
-```
-brew install pkg-config cairo pango libpng jpeg giflib
-```
+![https://www.npmjs.com/package/canvas#compiling](Unless previously installed you'll need Cairo and Pango)
 
 ## Example
 ```javascript
