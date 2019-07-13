@@ -160,7 +160,7 @@ MemeGenerator.prototype.wrapText = function (
 		return;
 	}
 
-	context.font = `bold ${fontSize}pt ${fontFamily}`;
+	context.font = `${this.bold ? 'bold' : 'normal'} ${fontSize}pt ${fontFamily}`;
 
 	const pushMethod = fromBottom ? 'unshift' : 'push';
 	const lineHeight = lineHeightRatio * fontSize;
