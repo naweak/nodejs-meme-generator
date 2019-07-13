@@ -53,11 +53,12 @@ MemeGenerator.prototype.setCanvas = function (options) {
  * @param {Object} options {fontFamily, fontSize, lineHeight}
  */
 MemeGenerator.prototype.setFontOptions = function (options) {
-	const {fontFamily, fontSize, lineHeight} = options;
+	const {fontFamily, fontSize, lineHeight, bold} = options;
 
 	this.fontFamily = fontFamily;
 	this.fontSize = fontSize;
 	this.lineHeight = lineHeight;
+	this.bold = bold || 'bold';
 }
 
 /**
