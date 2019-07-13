@@ -124,7 +124,7 @@ MemeGenerator.prototype.drawMeme = function () {
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
 	ctx.drawImage(canvasImg, 0, 0, memeWidth, memeHeight);
 
-	let x = memeWidth / 2;
+	let x = this.textX || memeWidth / 2;
 	let y;
 
 	if (topText) {
@@ -189,10 +189,12 @@ MemeGenerator.prototype.wrapText = function (
 	} else {
 		for (let k in lines) {
 			if (fromBottom) {
-				context.strokeText(lines[k], x, y - lineHeight * k);
+				if (!this.noStroke)
+					context.strokeText(lines[k], x, y - lineHeight * k);
 				context.fillText(lines[k], x, y - lineHeight * k);
 			} else {
-				context.strokeText(lines[k], x, y + lineHeight * k);
+				if (!this.noStroke)
+					context.strokeText(lines[k], x, y + lineHeight * k);
 				context.fillText(lines[k], x, y + lineHeight * k);
 			}
 		}
