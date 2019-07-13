@@ -189,12 +189,8 @@ MemeGenerator.prototype.wrapText = function (
 	} else {
 		for (let k in lines) {
 			if (fromBottom) {
-				if (!this.noStroke)
-					context.strokeText(lines[k], x, y - lineHeight * k);
 				context.fillText(lines[k], x, y - lineHeight * k);
 			} else {
-				if (!this.noStroke)
-					context.strokeText(lines[k], x, y + lineHeight * k);
 				context.fillText(lines[k], x, y + lineHeight * k);
 			}
 		}
