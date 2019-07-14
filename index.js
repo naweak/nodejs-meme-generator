@@ -32,7 +32,9 @@ class MemeGenerator {
      */
     setCanvas (options) {
         const {canvasWidth, canvasHeight} = options;
-        Canvas.registerFont(this.fontPath, { family: this.fontFamily })
+        if (this.fontPath) {
+            Canvas.registerFont(this.fontPath, { family: this.fontFamily })
+        }
         const canvas = new Canvas(canvasWidth, canvasHeight);
         const Image = Canvas.Image;
 
