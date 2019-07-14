@@ -32,6 +32,7 @@ class MemeGenerator {
      */
     setCanvas (options) {
         const {canvasWidth, canvasHeight} = options;
+        Canvas.registerFont(this.fontPath, { family: this.fontFamily })
         const canvas = new Canvas(canvasWidth, canvasHeight);
         const Image = Canvas.Image;
 
@@ -50,12 +51,13 @@ class MemeGenerator {
      * @param {Object} options {fontFamily, fontSize, lineHeight}
      */
     setFontOptions (options) {
-        const {fontFamily, fontSize, lineHeight, bold} = options;
+        const {fontFamily, fontSize, lineHeight, bold, path} = options;
 
         this.fontFamily = fontFamily;
         this.fontSize = fontSize;
         this.lineHeight = lineHeight;
         this.bold = bold || 'bold';
+        this.fontPath = path;
     }
     /**
      * Set meme canvas
