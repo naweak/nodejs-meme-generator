@@ -1,5 +1,3 @@
-'use strict';
-
 const request = require('request').defaults({encoding: null});
 const Canvas = require('canvas');
 
@@ -9,193 +7,190 @@ const Canvas = require('canvas');
  * @constructor
  * @param {Object} userConfig {canvasOptions, fontOptions}
  */
-function MemeGenerator (userConfig = {}) {
-	const {canvasOptions, fontOptions} = userConfig;
-	const config = Object.assign({
-		canvasOptions: {
-			canvasWidth: 500,
-			canvasHeight: 500
-		},
-		fontOptions: {
-			fontFamily: 'impact',
-			fontSize: 46,
-			lineHeight: 2
-		}
-	}, canvasOptions ? {canvasOptions: canvasOptions} : null,
-	fontOptions ? {fontOptions: fontOptions} : null);
+class MemeGenerator {
+    constructor (userConfig = {}) {
+        const {canvasOptions, fontOptions} = userConfig;
+        const config = Object.assign({
+                canvasOptions: {
+                    canvasWidth: 500,
+                    canvasHeight: 500
+                },
+                fontOptions: {
+                    fontFamily: 'impact',
+                    fontSize: 46,
+                    lineHeight: 2
+                }
+            }, canvasOptions ? {canvasOptions: canvasOptions} : null,
+            fontOptions ? {fontOptions: fontOptions} : null);
 
-	this.setCanvas(config.canvasOptions);
-	this.setFontOptions(config.fontOptions);
-}
+        this.setCanvas(config.canvasOptions);
+        this.setFontOptions(config.fontOptions);
+    }
+    /**
+     *
+     * @param {Object} options {canvasWidth, canvasHeight}
+     */
+    setCanvas (options) {
+        const {canvasWidth, canvasHeight} = options;
+        const canvas = new Canvas(canvasWidth, canvasHeight);
+        const Image = Canvas.Image;
 
-/**
- * 
- * @param {Object} options {canvasWidth, canvasHeight}
- */
-MemeGenerator.prototype.setCanvas = function (options) {
-	const {canvasWidth, canvasHeight} = options;
-	const canvas = new Canvas(canvasWidth, canvasHeight);
-	const Image = Canvas.Image;
+        this.canvas = canvas;
+        this.ctx = canvas.getContext('2d');
+        this.canvasImg = new Image();
 
-	this.canvas = canvas;
-	this.ctx = canvas.getContext('2d');
-	this.canvasImg = new Image();
+        this.ctx.lineWidth  = 2;
+        this.ctx.strokeStyle = 'black';
+        this.ctx.mutterLine = 2;
+        this.ctx.fillStyle = 'white';
+        this.ctx.textAlign = 'center';
+    }
+    /**
+     *
+     * @param {Object} options {fontFamily, fontSize, lineHeight}
+     */
+    setFontOptions (options) {
+        const {fontFamily, fontSize, lineHeight, bold} = options;
 
-	this.ctx.lineWidth  = 2;
-	this.ctx.strokeStyle = 'black';
-	this.ctx.mutterLine = 2;
-	this.ctx.fillStyle = 'white';
-	this.ctx.textAlign = 'center';
-}
+        this.fontFamily = fontFamily;
+        this.fontSize = fontSize;
+        this.lineHeight = lineHeight;
+        this.bold = bold || 'bold';
+    }
+    /**
+     * Set meme canvas
+     *
+     * @param {Object} options {topText, bottomText, url}
+     */
+    setImageOptions (options) {
+        const {topText, bottomText, url} = options;
 
-/**
- * 
- * @param {Object} options {fontFamily, fontSize, lineHeight}
- */
-MemeGenerator.prototype.setFontOptions = function (options) {
-	const {fontFamily, fontSize, lineHeight, bold} = options;
+        this.url = url;
+        this.topText = topText;
+        this.bottomText = bottomText;
+    }
+    /**
+     * Set meme canvas
+     *
+     * @param {Object} imageOptions {topText, bottomText, url}
+     */
+    generateMeme (imageOptions) {
+        this.setImageOptions(imageOptions);
 
-	this.fontFamily = fontFamily;
-	this.fontSize = fontSize;
-	this.lineHeight = lineHeight;
-	this.bold = bold || 'bold';
-}
+        return new Promise((resolve, reject) => {
+            request.get(this.url, (error, response, body) => {
+                if (!error && response.statusCode === 200) {
+                    this.canvasImg.src = new Buffer(body);
 
-/**
- * Set meme canvas
- * 
- * @param {Object} options {topText, bottomText, url}
- */
-MemeGenerator.prototype.setImageOptions = function (options) {
-	const {topText, bottomText, url} = options;
+                    this.calculateCanvasSize();
+                    this.drawMeme();
 
-	this.url = url;
-	this.topText = topText;
-	this.bottomText = bottomText;
-}
+                    resolve(this.canvas.toBuffer());
+                } else {
+                    reject(new Error('The image could not be loaded.'));
+                }
+            });
+        });
+    }
+    calculateCanvasSize () {
+        const {canvas, canvasImg} = this;
 
-/**
- * Set meme canvas
- * 
- * @param {Object} imageOptions {topText, bottomText, url}
- */
-MemeGenerator.prototype.generateMeme = function (imageOptions) {
-	this.setImageOptions(imageOptions);
+        canvas.height = canvasImg.height / canvasImg.width * canvas.width;
 
-	return new Promise((resolve, reject) => {
-		request.get(this.url, (error, response, body) => {
-			if (!error && response.statusCode === 200) {
-				this.canvasImg.src = new Buffer(body);
+        this.memeWidth = canvas.width;
+        this.memeHeight = canvas.height;
+    }
+    drawMeme () {
+        const {
+            canvas,
+            canvasImg,
+            memeWidth,
+            memeHeight,
+            topText,
+            bottomText,
+            fontSize,
+            fontFamily,
+            lineHeight,
+            ctx,
+            wrapText
+        } = this;
 
-				this.calculateCanvasSize();
-				this.drawMeme();
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(canvasImg, 0, 0, memeWidth, memeHeight);
 
-				resolve(this.canvas.toBuffer());
-			} else {
-				reject(new Error('The image could not be loaded.'));
-			}
-		});
-	});
-}
+        let x = this.textX || memeWidth / 2;
+        let y;
 
-MemeGenerator.prototype.calculateCanvasSize = function () {
-	const {canvas, canvasImg} = this;
+        if (topText) {
+            y = 0;
+            this.ctx.textBaseline = 'top';
+            wrapText(ctx, topText, x, y, memeWidth, lineHeight, false, fontSize, fontFamily);
+        }
 
-	canvas.height = canvasImg.height / canvasImg.width * canvas.width;
+        if (bottomText) {
+            y = memeHeight;
+            this.ctx.textBaseline = 'bottom';
+            wrapText(ctx, bottomText, x, y, memeWidth, lineHeight, true, fontSize, fontFamily);
+        }
+    }
+    /**
+     *
+     * @param {Object} context
+     * @param {String} text
+     * @param {Number} x
+     * @param {Number} y
+     * @param {Number} maxWidth
+     * @param {Number} lineHeightRatio
+     * @param {Boolean} fromBottom
+     * @param {Number} fontSize
+     * @param {String} fontFamily
+     */
+    wrapText (
+        context, text, x, y, maxWidth, lineHeightRatio, fromBottom, fontSize, fontFamily) {
 
-	this.memeWidth = canvas.width;
-	this.memeHeight = canvas.height;
-}
+        if (!text) {
+            return;
+        }
 
-MemeGenerator.prototype.drawMeme = function () {
-	const {
-		canvas,
-		canvasImg,
-		memeWidth,
-		memeHeight,
-		topText,
-		bottomText,
-		fontSize,
-		fontFamily,
-		lineHeight,
-		ctx,
-		wrapText
-	} = this;
+        console.log(this)
 
-	ctx.clearRect(0, 0, canvas.width, canvas.height);
-	ctx.drawImage(canvasImg, 0, 0, memeWidth, memeHeight);
+        context.font = `normal ${fontSize}pt ${fontFamily}`;
 
-	let x = this.textX || memeWidth / 2;
-	let y;
+        const pushMethod = fromBottom ? 'unshift' : 'push';
+        const lineHeight = lineHeightRatio * fontSize;
 
-	if (topText) {
-		y = 0;
-		this.ctx.textBaseline = 'top';
-		wrapText(ctx, topText, x, y, memeWidth, lineHeight, false, fontSize, fontFamily);
-	}
+        let lines = [];
+        let line = '';
+        let words = text.split(' ');
 
-	if (bottomText) {
-		y = memeHeight;
-		this.ctx.textBaseline = 'bottom';
-		wrapText(ctx, bottomText, x, y, memeWidth, lineHeight, true, fontSize, fontFamily);
-	}
-}
+        for (let n = 0; n < words.length; n++) {
+            const testLine = line + ' ' + words[n];
+            const metrics = context.measureText(testLine);
+            const testWidth = metrics.width;
 
-/**
- * 
- * @param {Object} context
- * @param {String} text
- * @param {Number} x
- * @param {Number} y
- * @param {Number} maxWidth
- * @param {Number} lineHeightRatio
- * @param {Boolean} fromBottom
- * @param {Number} fontSize
- * @param {String} fontFamily
- */
-MemeGenerator.prototype.wrapText = function (
-	context, text, x, y, maxWidth, lineHeightRatio, fromBottom, fontSize, fontFamily) {
+            if (testWidth > maxWidth) {
+                lines[pushMethod](line);
+                line = words[n] + ' ';
+            } else {
+                line = testLine;
+            }
+        }
 
-	if (!text) {
-		return;
-	}
+        lines[pushMethod](line);
 
-	context.font = `${this.bold ? 'bold' : 'normal'} ${fontSize}pt ${fontFamily}`;
-
-	const pushMethod = fromBottom ? 'unshift' : 'push';
-	const lineHeight = lineHeightRatio * fontSize;
-
-	let lines = [];
-	let line = '';
-	let words = text.split(' ');
-
-	for (let n = 0; n < words.length; n++) {
-		const testLine = line + ' ' + words[n];
-		const metrics = context.measureText(testLine);
-		const testWidth = metrics.width;
-
-		if (testWidth > maxWidth) {
-			lines[pushMethod](line);
-			line = words[n] + ' ';
-		} else {
-			line = testLine;
-		}
-	}
-
-	lines[pushMethod](line);
-
-	if (lines.length > 2) {
-		MemeGenerator.prototype.wrapText(
-			context, text, x, y, maxWidth, lineHeightRatio, fromBottom, fontSize - 10, fontFamily);
-	} else {
-		for (let k in lines) {
-			if (fromBottom) {
-				context.fillText(lines[k], x, y - lineHeight * k);
-			} else {
-				context.fillText(lines[k], x, y + lineHeight * k);
-			}
-		}
-	}
+        if (lines.length > 2) {
+            MemeGenerator.prototype.wrapText(
+                context, text, x, y, maxWidth, lineHeightRatio, fromBottom, fontSize - 10, fontFamily);
+        } else {
+            for (let k in lines) {
+                if (fromBottom) {
+                    context.fillText(lines[k], x, y - lineHeight * k);
+                } else {
+                    context.fillText(lines[k], x, y + lineHeight * k);
+                }
+            }
+        }
+    }
 }
 
 module.exports = MemeGenerator;
